@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard - Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>PhishGuard Admin</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/dashboard" class="active">Dashboard</a></li>
+                    <li><a href="/settings">Settings</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-chart-line"></i> Detection Statistics</h2>
+            </div>
+            <div class="dashboard-stats">
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <h3>Total Emails Analyzed</h3>
+                        <p class="stat-number">{{ stats.total_emails }}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>Phishing Detected</h3>
+                        <p class="stat-number">{{ stats.phishing_detected }}</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>Detection Rate</h3>
+                        <p class="stat-number">{{ stats.detection_rate }}%</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>Model Accuracy</h3>
+                        <p class="stat-number">{{ stats.model_accuracy }}%</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="dashboard-row">
+            <section class="card dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-pie"></i> Detection Breakdown</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="detectionChart"></canvas>
+                </div>
+            </section>
+
+            <section class="card dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> Risk Levels</h2>
+                </div>
+                <div class="chart-container">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </section>
+        </div>
+
+        <section class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-history"></i> Recent Detections</h2>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Email Subject</th>
+                            <th>Result</th>
+                            <th>Probability</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detection in recent_detections %}
+                        <tr>
+                            <td>{{ detection.date }}</td>
+                            <td>{{ detection.subject }}</td>
+                            <td class="{{ 'phishing' if detection.is_phishing else 'legitimate' }}">
+                                {{ 'Phishing' if detection.is_phishing else 'Legitimate' }}
+                            </td>
+                            <td>{{ detection.probability }}%</td>
+                            <td class="{{ detection.risk_level.lower() }}-risk">{{ detection.risk_level }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>PhishGuard</h3>
+                    <p>Protecting you from phishing attacks with advanced AI technology.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Admin Links</h3>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/dashboard">Dashboard</a></li>
+                        <li><a href="/settings">Settings</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p>Email: admin@phishguard.example.com</p>
+                    <p>Phone: (123) 456-7890</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 PhishGuard. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Detection Chart
+        const detectionCtx = document.getElementById('detectionChart').getContext('2d');
+        const detectionChart = new Chart(detectionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Phishing', 'Legitimate'],
+                datasets: [{
+                    data: [{{ stats.phishing_detected }}, {{ stats.legitimate_emails }}],
+            backgroundColor: [
+                '#e63946',
+                '#52b788'
+            ],
+            borderWidth: 1
+        }]
+            },
+        options: {
+            responsive: true,
+                plugins: {
+                legend: {
+                    position: 'bottom',
+                    },
+                title: {
+                    display: true,
+                        text: 'Email Classification'
+                }
+            }
+        }
+        });
+
+        // Risk Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(riskCtx, {
+            type: 'bar',
+            data: {
+                labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                datasets: [{
+                    label: 'Number of Emails',
+                    data: [{{ stats.high_risk }}, {{ stats.medium_risk }}, {{ stats.low_risk }}],
+        backgroundColor: [
+            '#e63946',
+            '#ffb703',
+            '#52b788'
+        ],
+            borderWidth: 1
+                }]
+            },
+        options: {
+            responsive: true,
+                scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                        text: 'Risk Level Distribution'
+                }
+            }
+        }
+        });
+    </script>
+</body>
+
+</html>
